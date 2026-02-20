@@ -7,4 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\STrader.Application\STrader.Application.csproj" />
+    <ProjectReference Include="..\STrader.Infrastructure\STrader.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
