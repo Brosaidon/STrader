@@ -14,7 +14,21 @@ app.MapGet("/", () =>
             <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
         </head>
         <body class="container">
+        <Header>
             <h1>STrader</h1>
+        </Header>
+        <nav>
+        <div>
+            <a href="/">MARKET</a>
+        </div>
+        <div>
+            <a href="/station">STATION</a>
+        </div>
+        <div>
+            <a href="/map">MAP</a>
+        </div> 
+        </nav>
+
             <p>Market overview</p>
 
             <button hx-get="/market"
@@ -26,6 +40,9 @@ app.MapGet("/", () =>
             <div id="content"></div>
 
             <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+            <Footer>
+                <p>STrader &copy; 2026</p>
+            </Footer>
         </body>
         </html>
         """,
