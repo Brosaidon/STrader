@@ -1,3 +1,7 @@
+using STrader.Api.Features.Market;
+using STrader.Api.Features.StarMap;
+using STrader.Api.Features.Station;
+
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
@@ -14,37 +18,44 @@ app.MapGet("/", () =>
             <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
         </head>
         <body class="container">
-        <Header>
+        <header>
             <h1>STrader</h1>
-        </Header>
+        </header>
         <nav>
         <div>
             <a href="/">MARKET</a>
         </div>
         <div>
-            <a href="/station">STATION</a>
+            <a href="#"
+            hx-get="/station"
+            hx-target="#content"
+            hx-swap="innerHTML">
+            STATION
+            </a>
         </div>
         <div>
-            <a href="/map">MAP</a>
+            <a href="#"
+            hx-get="/map"
+            hx-target="#content"
+            hx-swap="innerHTML">
+            MAP
+            </a>
         </div> 
         </nav>
-
-            <p>Market overview</p>
-
-            <button hx-get="/market"
-                    hx-target="#content"
-                    hx-swap="innerHTML">
-                Load market
-            </button>
-
+        
             <div id="content"></div>
 
             <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-            <Footer>
+            <footer>
                 <p>STrader &copy; 2026</p>
-            </Footer>
+            </footer>
         </body>
         </html>
         """,
         "text/html"));
+
+app.MapMarket();
+app.MapStation();
+app.MapStarMap();
+
 app.Run();
