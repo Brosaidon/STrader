@@ -35,14 +35,14 @@ app.MapGet("/", () =>
         </div>
         <div>
             <a href="#"
-            hx-get="/map"
+            hx-get="/star-map"
             hx-target="#content"
             hx-swap="innerHTML">
-            MAP
+            STAR MAP
             </a>
         </div> 
         </nav>
-        
+
             <div id="content"></div>
 
             <script src="https://unpkg.com/htmx.org@1.9.10"></script>
