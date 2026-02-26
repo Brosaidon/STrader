@@ -1,17 +1,18 @@
-namespace STrader.Api.Features.Station;
+namespace STrader.Web.Features.StarMap;
 
-public static class StationEndpoints
+public static class StarMapEndpoints
 {
-    public static void MapStation(this WebApplication app)
+    public static void MapStarMap(this WebApplication app)
     {
-        app.MapGet("/station", (HttpRequest request) =>
+        app.MapGet("/star-map", (HttpRequest request) =>
         {
             var html = """
-                <ul>
-                    <li>Hire Crew</li>
-                    <li>Repair Services</li>
-                    <li>Outfitting</li>
-                </ul>
+                <section>
+                    <h2>Star Map</h2> 
+                    <ul>
+                    <li>Sectors</li>
+                    <li>Stations</li>
+                    </ul>
                 </section>
                 """;
             //HTMX request - return partial HTML

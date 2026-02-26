@@ -1,4 +1,4 @@
-namespace STrader.Api.Layout;
+namespace STrader.Web.Layout;
 
 public static class LayoutHtml
 {

@@ -1,4 +1,4 @@
-namespace STrader.Api.Features.Market;
+namespace STrader.Web.Features.Market;
 
 public static class MarketEndpoints
 {

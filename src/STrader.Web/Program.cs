@@ -1,7 +1,7 @@
-using STrader.Api.Features.Market;
-using STrader.Api.Features.StarMap;
-using STrader.Api.Features.Station;
-using STrader.Api.Layout;
+using STrader.Web.Features.Market;
+using STrader.Web.Features.StarMap;
+using STrader.Web.Features.Station;
+using STrader.Web.Layout;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
