@@ -4,31 +4,23 @@ public static class MarketEndpoints
 {
     public static void MapMarket(this WebApplication app)
     {
-        app.MapGet("/market", () =>
-            Results.Content(
-                """
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Commodity</th>
-                            <th>Price</th>
-                            <th>Supply</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Ore</td>
-                            <td>120</td>
-                            <td>High</td>
-                        </tr>
-                        <tr>
-                            <td>Food</td>
-                            <td>80</td>
-                            <td>Low</td>
-                        </tr>
-                    </tbody>
-                </table>
-                """,
-                "text/html"));
+        app.MapGet("/market", (HttpRequest request) =>
+        {
+            var html = """
+            <section>
+            <h2>Market</h2>
+                <p>Market data will be displayed here.</p>
+            </section>
+            """;
+
+            //HTMX request - return partial HTML
+            if (request.Headers.ContainsKey("HX-Request"))
+                return Results.Content(html, "text/html");
+            //Normal request - return full page
+            return Results.Content(
+            Layout.LayoutHtml.Page(html),
+            "text/html");
+
+        });
     }
 }
