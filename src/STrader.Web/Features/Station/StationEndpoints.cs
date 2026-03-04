@@ -23,5 +23,26 @@ public static class StationEndpoints
             "text/html");
 
         });
+
+        // Educational test for HTMX
+        app.MapGet("/station/crew", (HttpRequest request) =>
+        {
+            var html = """ 
+            <section>
+                <ul>
+                    <li> [Crew Card] </li>
+                    <li> [Crew Card] </li>
+                    <li> [Crew Card] </li>
+                </ul>
+            </section>
+            """;
+            //HTMX request - return partial HTML
+            if (request.Headers.ContainsKey("HX-Request"))
+                return Results.Content(html, "text/html");
+            //Normal request - return full page
+            return Results.Content(
+            Layout.LayoutHtml.Page(html),
+            "text/html");
+        });
     }
 }
