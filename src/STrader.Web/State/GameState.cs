@@ -87,6 +87,17 @@ public static class GameState
     public static int CargoCapacity { get; set; } = 20;
 
     // Market state (single commodity for now)
-    public static int FoodPrice { get; set; } = 12;
-    public static int FoodAvailable { get; set; } = 50;
+    public static List<Commodity> MarketCommodities { get; } = new()
+{
+    new Commodity("Food", "🍎", 12, 50, 0)
+};
 }
+
+public record Commodity(
+    string Name,
+    string Icon,
+    int Price,
+    int Available,
+    int InCargo
+    );
+
