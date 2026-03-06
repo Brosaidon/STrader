@@ -82,15 +82,15 @@ public static class GameState
     // Player economy
     public static int Credits { get; set; } = 1000;
 
-    // Cargo state
-    public static int CargoFood { get; set; } = 0;
+    // Cargo limit
     public static int CargoCapacity { get; set; } = 20;
 
-    // Market state (single commodity for now)
+    // Market state
     public static List<Commodity> MarketCommodities { get; } = new()
 {
     new Commodity("Food", "🍎", 12, 50, 0)
 };
+    public static Commodity Food => GameState.MarketCommodities[0];
 }
 
 public record Commodity(
@@ -100,4 +100,3 @@ public record Commodity(
     int Available,
     int InCargo
     );
-
