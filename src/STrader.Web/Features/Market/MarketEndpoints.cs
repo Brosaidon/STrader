@@ -4,8 +4,18 @@ using STrader.Web;
 using STrader.Web.State;
 using STrader.Web.WebHelpers;
 
+
+
 public static class MarketEndpoints
 {
+    public static void MapMarket(this WebApplication app)
+    {
+        app.MapGet("/market", RenderMarket);
+        app.MapPost("/market/buy", BuyFood);
+        app.MapPost("/market/buy-max", BuyMaxFood);
+        app.MapPost("/market/sell", SellFood);
+        app.MapPost("/market/sell-all", SellAllFood);
+    }
     private static IResult RenderMarket(HttpRequest request)
     {
         var food = GameState.Food;
@@ -66,7 +76,6 @@ public static class MarketEndpoints
 
         return RenderMarket(request);
     }
-
     private static IResult SellAllFood(HttpRequest request)
     {
         var food = GameState.MarketCommodities[0];
