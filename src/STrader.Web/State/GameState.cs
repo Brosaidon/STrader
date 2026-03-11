@@ -90,7 +90,6 @@ public static class GameState
 {
     new Commodity("Food", "🍎", 12, 50, 0)
 };
-    public static Commodity Food => GameState.MarketCommodities[0];
 }
 
 public record Commodity(
