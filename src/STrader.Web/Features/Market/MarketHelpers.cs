@@ -21,7 +21,25 @@ namespace STrader.Web.Features.Market
                         hx-target="#content"
                         hx-swap="innerHTML">
                         Buy
-                  </button>
+                    </button>
+                    <button
+                        hx-post="/market/buy-max/{commodity.Name}"
+                        hx-target="#content"
+                        hx-swap="innerHTML">
+                        Buy Max
+                    </button>
+                    <button
+                        hx-post="/market/sell/{commodity.Name}"
+                        hx-target="#content"
+                        hx-swap="innerHTML">
+                        Sell
+                    </button>
+                    <button
+                        hx-post="/market/sell-all/{commodity.Name}"
+                        hx-target="#content"
+                        hx-swap="innerHTML">
+                        Sell All
+                    </button>
                 </td>
 
                 <td>{commodity.InCargo}</td>

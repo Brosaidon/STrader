@@ -18,12 +18,7 @@ public static class LayoutHtml
         </header>
 
         <nav>
-        <a  href="/market"
-            hx-get="/market" 
-            hx-target="#content" 
-            hx-push-url="true">
-            MARKET
-        </a>
+        <a  href="/market" hx-get="/market" hx-target="#content" hx-push-url="true">MARKET</a>
         <a hx-get="/station" hx-target="#content" hx-push-url="true">STATION</a>
         <a hx-get="/star-map" hx-target="#content" hx-push-url="true">STAR MAP</a>
         </nav>

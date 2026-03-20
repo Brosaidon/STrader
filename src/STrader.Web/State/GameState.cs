@@ -88,7 +88,8 @@ public static class GameState
     // Market state
     public static List<Commodity> MarketCommodities { get; } = new()
 {
-    new Commodity("Food", "🍎", 12, 50, 0)
+    new Commodity("Food", "🍎", 12, 50, 0),
+    new Commodity("Ore", "⛏️", 30, 20, 0)
 };
 }
 

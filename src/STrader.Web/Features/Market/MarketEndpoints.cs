@@ -10,12 +10,19 @@ public static class MarketEndpoints
 {
     public static void MapMarket(this WebApplication app)
     {
+        app.MapGet("/market", GetMarket);
+
         app.MapPost("/market/buy/{name}", BuyCommodity);
         app.MapPost("/market/buy-max/{name}", BuyMaxCommodity);
         app.MapPost("/market/sell/{name}", SellCommodity);
         app.MapPost("/market/sell-all/{name}", SellAllCommodity);
     }
 
+    private static IResult GetMarket(HttpRequest request)
+    {
+        var html = MarketView.Render();
+        return WebHelpers.Html(request, html);
+    }
     private static int GetCommodityIndex(string name)
     {
         return GameState.MarketCommodities.FindIndex(c => c.Name == name);
