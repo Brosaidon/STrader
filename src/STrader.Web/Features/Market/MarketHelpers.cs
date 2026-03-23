@@ -1,49 +1,58 @@
 using STrader.Application.Services;
 using STrader.Domain.Entities;
+using STrader.Application.Models;
 
 namespace STrader.Web.Features.Market
 {
     public static class MarketHelpers
     {
-        // This method generates an HTML table row for a commodity, including its name, price, and price changes.
-        public static string RenderCommodityRow(SessionService session, MarketItem item)
+        // Updated to accept pending actions for optimistic rendering
+        public static string RenderCommodityRow(SessionService session, MarketItem item, List<PendingAction> pendingActions)
         {
-            var (name, icon, inCargo) = Resolve(session, item);
+            var (name, icon, inCargo, projectedAvailable, projectedInCargo) = Resolve(session, item, pendingActions);
 
             return $"""
-    <tr>
-        <td>{EscapeHtml(name)}</td>
-        <td>{icon}</td>
-        <td>{item.Available}</td>
-        <td>{item.Price}</td>
-        <td>
-            <button hx-post="/market/buy/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Buy</button>
-            <button hx-post="/market/buy-max/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Buy Max</button>
-            <button hx-post="/market/sell/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Sell</button>
-            <button hx-post="/market/sell-all/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Sell All</button>
-        </td>
-        <td></td> <!-- Price change column reserved -->
-        <td>{inCargo}</td>
-    </tr>
-    """;
+<tr>
+    <td>{EscapeHtml(name)}</td>
+    <td>{icon}</td>
+    <td>{projectedAvailable}</td>
+    <td>{item.Price}</td>
+    <td>
+        <button hx-post="/market/buy/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Buy</button>
+        <button hx-post="/market/buy-max/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Buy Max</button>
+        <button hx-post="/market/sell/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Sell</button>
+        <button hx-post="/market/sell-all/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Sell All</button>
+    </td>
+    <td></td> <!-- Price change column reserved -->
+    <td>{projectedInCargo}</td>
+</tr>
+""";
         }
 
-        //This method looks up items in the catalog, resulting in leaking logic into the web layer. This is not optimal, we keep this for now.
-        private static (string name, string icon, int inCargo) Resolve(SessionService session, MarketItem item)
+        // Calculates projected stock and cargo based on pending actions
+        private static (string name, string icon, int inCargo, int projectedAvailable, int projectedInCargo)
+            Resolve(SessionService session, MarketItem item, List<PendingAction> pendingActions)
         {
-            var catalogItem = ItemCatalog.Items
-                .First(i => i.Id == item.ItemId);
+            var catalogItem = ItemCatalog.Items.First(i => i.Id == item.ItemId);
 
             var cargoItem = session.Cargo.FirstOrDefault(c => c.ItemId == item.ItemId);
+            var inCargo = cargoItem?.Quantity ?? 0;
 
-            return (
-                catalogItem.Name,
-                catalogItem.Icon,
-                cargoItem?.Quantity ?? 0
-            );
+            // Apply pending actions for projections
+            var pendingBuy = pendingActions
+                .Where(a => a.ItemId == item.ItemId && a.ActionType == ActionType.Buy)
+                .Sum(a => a.Quantity);
+
+            var pendingSell = pendingActions
+                .Where(a => a.ItemId == item.ItemId && a.ActionType == ActionType.Sell)
+                .Sum(a => a.Quantity);
+
+            var projectedAvailable = item.Available - pendingBuy + pendingSell;
+            var projectedInCargo = inCargo + pendingBuy - pendingSell;
+
+            return (catalogItem.Name, catalogItem.Icon, inCargo, projectedAvailable, projectedInCargo);
         }
 
-        //This makes sure that any user-generated content is safely escaped before being rendered in the HTML, preventing XSS attacks.
         private static string EscapeHtml(string text)
         {
             return text

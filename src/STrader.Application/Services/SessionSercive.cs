@@ -21,6 +21,7 @@ public class SessionService
     public List<CargoItem> Cargo { get; set; } = new();
 
     public int Credits { get; set; } = 1000; //starting credits
+    public int CargoSpace { get; set; } = 25; //starting cargo space
 
     //Initialize market with scommodities from the catalog.
 
