@@ -27,7 +27,7 @@ public class SessionService
     public void InitializeMarket()
     {
         Market = ItemCatalog.Items
-            .Where(i => i.Type == ItemType.Commodity)
+            .Where(i => i.Type == ItemType.Commodity && i.Id >= 10) // IDs 10–19
             .Select(i => new MarketItem
             {
                 ItemId = i.Id,

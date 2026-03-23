@@ -1,20 +1,20 @@
-using STrader.Web.State;
+using STrader.Application.Services;
+using STrader.Domain.Entities;
 
 namespace STrader.Web.Features.Market;
 
 public static class MarketView
 {
-    public static string Render()
+    public static string Render(SessionService session)
     {
-        var commodities = GameState.MarketCommodities;
+        var commodities = session.Market;
 
         //this here is for each commodity. i think its cool.
-        var rows = string.Join("", commodities.Select(MarketHelpers.RenderCommodityRow));
-
+        var rows = string.Join("", commodities.Select(item => MarketHelpers.RenderCommodityRow(session, item)));
         var html = $"""
         <h2>Market</h2>
 
-        <p>Credits: {GameState.Credits}</p>
+        <p>Credits: {session.Credits}</p>
 
         <table>
           <thead>
@@ -22,7 +22,9 @@ public static class MarketView
                 <th>Name</th>
                 <th>Icon</th>
                 <th>Available</th>
+                <th>Price</th>
                 <th>Actions</th>
+                <th>Price Change</th> <!-- reserved for later -->
                 <th>In Cargo</th>
             </tr>
         </thead>

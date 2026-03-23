@@ -9,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<SessionService>();
 var app = builder.Build();
 
+var session = app.Services.GetRequiredService<SessionService>();
+session.InitializeMarket(); // now Market has default commodities
+
 app.UseStaticFiles();
 
 app.MapGet("/", () =>

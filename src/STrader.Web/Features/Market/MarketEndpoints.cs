@@ -1,7 +1,6 @@
 namespace STrader.Web.Features.Market;
 
-using STrader.Web;
-using STrader.Web.State;
+using STrader.Application.Services;
 using STrader.Web.WebHelpers;
 
 
@@ -10,96 +9,102 @@ public static class MarketEndpoints
 {
     public static void MapMarket(this WebApplication app)
     {
-        app.MapGet("/market", GetMarket);
+        //Here We will inject the SessionService from the Application Layer.
+        app.MapGet("/market", (SessionService session, HttpRequest request) =>
+        {
+            var html = MarketView.Render(session);
+            return WebHelpers.Html(request, html);
+        });
 
-        app.MapPost("/market/buy/{name}", BuyCommodity);
-        app.MapPost("/market/buy-max/{name}", BuyMaxCommodity);
-        app.MapPost("/market/sell/{name}", SellCommodity);
-        app.MapPost("/market/sell-all/{name}", SellAllCommodity);
+        app.MapPost("/market/buy/{itemId}", BuyCommodity);
+        app.MapPost("/market/buy-max/{itemId}", BuyMaxCommodity);
+        app.MapPost("/market/sell/{itemId}", SellCommodity);
+        app.MapPost("/market/sell-all/{itemId}", SellAllCommodity);
     }
 
-    private static IResult GetMarket(HttpRequest request)
+    private static IResult RenderMarket(HttpRequest request, SessionService session)
     {
-        var html = MarketView.Render();
-        return WebHelpers.Html(request, html);
-    }
-    private static int GetCommodityIndex(string name)
-    {
-        return GameState.MarketCommodities.FindIndex(c => c.Name == name);
-    }
-    private static IResult RenderMarket(HttpRequest request, string name)
-    {
-        var commodity = GameState.MarketCommodities[GetCommodityIndex(name)];
-
-        var html = MarketView.Render();
+        var html = MarketView.Render(session);
         return WebHelpers.Html(request, html);
 
     }
 
-    private static IResult BuyCommodity(HttpRequest request, string name)
+    private static IResult BuyCommodity(int itemId, SessionService session, HttpRequest request)
     {
-        var commodity = GameState.MarketCommodities[GetCommodityIndex(name)];
-        if (commodity.Available <= 0) return RenderMarket(request, name);
+        var item = session.GetMarketItem(itemId);
+        if (item == null || item.Available <= 0) return RenderMarket(request, session);
 
-        if (commodity.InCargo >= GameState.CargoCapacity) return RenderMarket(request, name);
+        // check credits
+        if (session.Credits < item.Price) return RenderMarket(request, session);
 
-        if (GameState.Credits < commodity.Price) return RenderMarket(request, name);
-
-        GameState.Credits -= commodity.Price;
-        GameState.MarketCommodities[GetCommodityIndex(name)] = commodity with
+        // add to cargo
+        var cargoItem = session.GetCargoItem(itemId);
+        if (cargoItem == null)
         {
-            Available = commodity.Available - 1,
-            InCargo = commodity.InCargo + 1
-        };
+            session.Cargo.Add(new CargoItem { ItemId = itemId, Quantity = 1 });
+        }
+        else
+        {
+            cargoItem.Quantity += 1;
+        }
 
-        return RenderMarket(request, name);
+        // update market
+        item.Available -= 1;
+
+        session.Credits -= item.Price;
+
+        return RenderMarket(request, session);
     }
 
-    private static IResult BuyMaxCommodity(HttpRequest request, string name)
+    private static IResult BuyMaxCommodity(int itemId, SessionService session, HttpRequest request)
     {
-        var commodity = GameState.MarketCommodities[GetCommodityIndex(name)];
-        var space = GameState.CargoCapacity - commodity.InCargo;
-        var maxAffordable = GameState.Credits / commodity.Price;
-        var amount = Math.Min(commodity.Available, Math.Min(space, maxAffordable));
+        var item = session.GetMarketItem(itemId);
+        if (item == null || item.Available <= 0) return RenderMarket(request, session);
 
-        GameState.Credits -= amount * commodity.Price;
-        GameState.MarketCommodities[GetCommodityIndex(name)] = commodity with
-        {
-            Available = commodity.Available - amount,
-            InCargo = commodity.InCargo + amount
-        };
+        var cargoItem = session.GetCargoItem(itemId);
+        var inCargo = cargoItem?.Quantity ?? 0;
+        var space = int.MaxValue; // if you have a cargo limit, replace with (CargoCapacity - inCargo)
+        var maxAffordable = session.Credits / item.Price;
+        var amount = Math.Min(item.Available, Math.Min(space, maxAffordable));
 
-        return RenderMarket(request, name);
+        // update market and cargo
+        if (cargoItem == null)
+            session.Cargo.Add(new CargoItem { ItemId = itemId, Quantity = amount });
+        else
+            cargoItem.Quantity += amount;
+
+        item.Available -= amount;
+        session.Credits -= amount * item.Price;
+
+        return RenderMarket(request, session);
     }
 
-    private static IResult SellCommodity(HttpRequest request, string name)
+    private static IResult SellCommodity(int itemId, SessionService session, HttpRequest request)
     {
-        var commodity = GameState.MarketCommodities[GetCommodityIndex(name)];
-        if (commodity.InCargo <= 0) return RenderMarket(request, name);
+        var item = session.GetMarketItem(itemId);
+        var cargoItem = session.GetCargoItem(itemId);
+        if (item == null || cargoItem == null || cargoItem.Quantity <= 0)
+            return RenderMarket(request, session);
 
-        GameState.Credits += commodity.Price;
+        cargoItem.Quantity -= 1;
+        item.Available += 1;
+        session.Credits += item.Price;
 
-        GameState.MarketCommodities[GetCommodityIndex(name)] = commodity with
-        {
-            Available = commodity.Available + 1,
-            InCargo = commodity.InCargo - 1
-        };
-
-        return RenderMarket(request, name);
+        return RenderMarket(request, session);
     }
-    private static IResult SellAllCommodity(HttpRequest request, string name)
+
+    private static IResult SellAllCommodity(int itemId, SessionService session, HttpRequest request)
     {
-        var commodity = GameState.MarketCommodities[GetCommodityIndex(name)];
-        var amount = commodity.InCargo;
+        var item = session.GetMarketItem(itemId);
+        var cargoItem = session.GetCargoItem(itemId);
+        if (item == null || cargoItem == null || cargoItem.Quantity <= 0)
+            return RenderMarket(request, session);
 
-        GameState.Credits += amount * commodity.Price;
+        var amount = cargoItem.Quantity;
+        cargoItem.Quantity = 0;
+        item.Available += amount;
+        session.Credits += amount * item.Price;
 
-        GameState.MarketCommodities[GetCommodityIndex(name)] = commodity with
-        {
-            Available = commodity.Available + amount,
-            InCargo = 0
-        };
-
-        return RenderMarket(request, name);
+        return RenderMarket(request, session);
     }
 }

@@ -15,14 +15,14 @@ namespace STrader.Web.Features.Market
         <td>{EscapeHtml(name)}</td>
         <td>{icon}</td>
         <td>{item.Available}</td>
-
+        <td>{item.Price}</td>
         <td>
             <button hx-post="/market/buy/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Buy</button>
             <button hx-post="/market/buy-max/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Buy Max</button>
             <button hx-post="/market/sell/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Sell</button>
             <button hx-post="/market/sell-all/{item.ItemId}" hx-target="#content" hx-swap="innerHTML">Sell All</button>
         </td>
-
+        <td></td> <!-- Price change column reserved -->
         <td>{inCargo}</td>
     </tr>
     """;
