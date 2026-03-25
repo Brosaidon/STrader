@@ -47,8 +47,8 @@ namespace STrader.Web.Features.Market
                 .Where(a => a.ItemId == item.ItemId && a.ActionType == ActionType.Sell)
                 .Sum(a => a.Quantity);
 
-            var projectedAvailable = item.Available - pendingBuy + pendingSell;
-            var projectedInCargo = inCargo + pendingBuy - pendingSell;
+            var projectedAvailable = Math.Max(0, item.Available - pendingBuy + pendingSell);
+            var projectedInCargo = Math.Max(0, inCargo + pendingBuy - pendingSell);
 
             return (catalogItem.Name, catalogItem.Icon, inCargo, projectedAvailable, projectedInCargo);
         }

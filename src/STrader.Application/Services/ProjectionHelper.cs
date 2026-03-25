@@ -38,7 +38,7 @@ public static class ProjectionHelper
                 return a.Quantity;
             });
 
-        return session.Cargo.Sum(c => c.Quantity) + pendingCargo;
+        return Math.Max(0, session.Cargo.Sum(c => c.Quantity) + pendingCargo);
     }
 
     /// <summary>
