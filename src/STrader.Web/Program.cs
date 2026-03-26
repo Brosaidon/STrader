@@ -4,9 +4,11 @@ using STrader.Web.Features.Station;
 using STrader.Web.Layout;
 using STrader.Web.WebHelpers;
 using STrader.Application.Services;
+using STrader.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<SessionService>();
+builder.Services.AddSingleton<IMarketService, MarketService>();
 var app = builder.Build();
 
 var session = app.Services.GetRequiredService<SessionService>();

@@ -3,6 +3,7 @@ namespace STrader.Web.Features.Market;
 using STrader.Application.Services;
 using STrader.Application.Models;
 using STrader.Web.WebHelpers;
+using STrader.Application.Interfaces;
 
 public static class MarketEndpoints
 {
@@ -18,27 +19,40 @@ public static class MarketEndpoints
             return WebHelpers.Html(request, html);
         });
 
-        app.MapPost("/market/buy/{itemId}", (int itemId, SessionService session, HttpRequest request) =>
-            QueuePendingAction(session, itemId, ActionType.Buy, 1, request)
+        app.MapPost("/market/buy/{itemId}", (int itemId, IMarketService service, SessionService session) =>
+        {
+            service.QueueAction(session, PendingActions, new MarketActionRequest
+            {
+                ItemId = itemId,
+                ActionType = ActionType.Buy,
+                Quantity = 1
+            });
+
+            return Results.Redirect("/market");
+        }
         );
 
-        app.MapPost("/market/buy-max/{itemId}", (int itemId, SessionService session, HttpRequest request) =>
+        app.MapPost("/market/buy-max/{itemId}", (int itemId, IMarketService service, SessionService session) =>
         {
-            var item = session.GetMarketItem(itemId);
-            if (item == null) return RenderMarket(request, session);
+            service.QueueAction(session, PendingActions, new MarketActionRequest
+            {
+                ItemId = itemId,
+                ActionType = ActionType.Buy,
+                Quantity = ProjectionHelper.GetMaxAffordableQuantity(session, PendingActions, itemId)
+            });
 
-            var cargoItem = session.GetCargoItem(itemId);
-            var inCargo = cargoItem?.Quantity ?? 0;
-            var spaceLeft = session.CargoSpace - ProjectionHelper.GetProjectedCargoUsed(session, PendingActions);
-            var maxAffordable = ProjectionHelper.GetProjectedCredits(session, PendingActions) / item.Price;
-            var amount = Math.Min(item.Available, Math.Min(spaceLeft, maxAffordable));
-
-            return QueuePendingAction(session, itemId, ActionType.Buy, amount, request);
+            return Results.Redirect("/market");
         });
 
-        app.MapPost("/market/sell/{itemId}", (int itemId, SessionService session, HttpRequest request) =>
-            QueuePendingAction(session, itemId, ActionType.Sell, 1, request)
-        );
+        app.MapPost("/market/sell/{itemId}", (int itemId, IMarketService service, SessionService sessiond) =>
+        service.QueueAction(session, PendingActions, new MarketActionRequest
+        {
+            ItemId = itemId,
+            ActionType = ActionType.Sell,
+            Quantity = 1
+        });
+
+        return Results.Redirect("/market");
 
         app.MapPost("/market/sell-all/{itemId}", (int itemId, SessionService session, HttpRequest request) =>
         {

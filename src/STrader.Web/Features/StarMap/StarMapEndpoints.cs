@@ -4,6 +4,12 @@ public static class StarMapEndpoints
 {
     public static void MapStarMap(this WebApplication app)
     {
+        app.MapPost("/travel", (IMarketService service, SessionService session) =>
+
+    service.ExecuteTurn(session, PendingActions);
+
+        return Results.Redirect("/market");
+
         app.MapGet("/star-map", (HttpRequest request) =>
         {
             var html = """
