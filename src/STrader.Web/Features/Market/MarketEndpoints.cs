@@ -29,8 +29,7 @@ public static class MarketEndpoints
             });
 
             return Results.Redirect("/market");
-        }
-        );
+        });
 
         app.MapPost("/market/buy-max/{itemId}", (int itemId, IMarketService service, SessionService session) =>
         {
@@ -44,22 +43,28 @@ public static class MarketEndpoints
             return Results.Redirect("/market");
         });
 
-        app.MapPost("/market/sell/{itemId}", (int itemId, IMarketService service, SessionService sessiond) =>
-        service.QueueAction(session, PendingActions, new MarketActionRequest
+        app.MapPost("/market/sell/{itemId}", (int itemId, IMarketService service, SessionService session) =>
         {
-            ItemId = itemId,
-            ActionType = ActionType.Sell,
-            Quantity = 1
+            service.QueueAction(session, PendingActions, new MarketActionRequest
+            {
+                ItemId = itemId,
+                ActionType = ActionType.Sell,
+                Quantity = 1
+            });
+
+            return Results.Redirect("/market");
         });
 
-        return Results.Redirect("/market");
-
-        app.MapPost("/market/sell-all/{itemId}", (int itemId, SessionService session, HttpRequest request) =>
+        app.MapPost("/market/sell-all/{itemId}", (int itemId, IMarketService service, SessionService session) =>
         {
-            var cargoItem = session.GetCargoItem(itemId);
-            if (cargoItem == null || cargoItem.Quantity <= 0) return RenderMarket(request, session);
+            service.QueueAction(session, PendingActions, new MarketActionRequest
+            {
+                ItemId = itemId,
+                ActionType = ActionType.Sell,
+                Quantity = ProjectionHelper.GetMaxSellableQuantity(session, PendingActions, itemId)
+            });
 
-            return QueuePendingAction(session, itemId, ActionType.Sell, cargoItem.Quantity, request);
+            return Results.Redirect("/market");
         });
     }
 
