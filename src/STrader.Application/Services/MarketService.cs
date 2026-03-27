@@ -29,7 +29,7 @@ public class MarketService : IMarketService
     }
 
     // NO STATE MUTATION
-    public void QueueAction(SessionService session, List<PendingAction> pending MarketActionRequest request)
+    public void QueueAction(SessionService session, List<PendingAction> pending, MarketActionRequest request)
     {
         var action = new PendingAction
         {
@@ -45,7 +45,7 @@ public class MarketService : IMarketService
     }
 
     // The ONLY WRITE ENTRY POINT
-    public void ExexuteTurn(SessionService session, List<PendingAction> pending)
+    public void ExecuteTurn(SessionService session, List<PendingAction> pending)
     {
         foreach (var action in pending)
         {

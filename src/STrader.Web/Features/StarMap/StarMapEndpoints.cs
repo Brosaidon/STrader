@@ -1,5 +1,7 @@
 namespace STrader.Web.Features.StarMap;
 
+using STrader.Application.Services;
+using STrader.Application.Interfaces;
 public static class StarMapEndpoints
 {
     public static void MapStarMap(this WebApplication app)

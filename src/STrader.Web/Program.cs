@@ -9,6 +9,7 @@ using STrader.Application.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<SessionService>();
 builder.Services.AddSingleton<IMarketService, MarketService>();
+builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
 var app = builder.Build();
 
 var session = app.Services.GetRequiredService<SessionService>();
