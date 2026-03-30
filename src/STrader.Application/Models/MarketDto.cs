@@ -6,7 +6,7 @@ public class MarketStateDto
     public int CargoUsed { get; set; }
     public int CargoLeft { get; set; }
 
-    public List<MarketItemDto> Items { get; set; } = [];
+    public List<MarketItemDto> Items { get; set; } = new();
 }
 
 public class MarketItemDto
@@ -15,9 +15,14 @@ public class MarketItemDto
     public string Name { get; set; } = "";
     public string Icon { get; set; } = "";
 
+
     public int Price { get; set; }
+
     public int Available { get; set; }
     public int InCargo { get; set; }
+
+    public int ProjectedAvailable { get; set; }
+    public int ProjectedInCargo { get; set; }
 }
 
 public class MarketActionRequest

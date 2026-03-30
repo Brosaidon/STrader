@@ -7,85 +7,63 @@ using STrader.Application.Interfaces;
 
 public static class MarketEndpoints
 {
-    // Simulate a PendingActions service (could be injected)
-    private static List<PendingAction> PendingActions = new();
-
     public static void MapMarket(this WebApplication app)
     {
-        app.MapGet("/market", (SessionService session, HttpRequest request) =>
+        app.MapGet("/market", (SessionService session, PendingActionStore store, HttpRequest request) =>
         {
             // Use projections for UI rendering
-            var html = MarketView.Render(session, PendingActions);
+            var html = MarketView.Render(session, store.Actions);
             return WebHelpers.Html(request, html);
         });
 
-        app.MapPost("/market/buy/{itemId}", (int itemId, IMarketService service, SessionService session) =>
+        app.MapPost("/market/buy/{itemId}", HandleAction(ActionType.Buy, 1));
+
+        app.MapPost("/market/buy-max/{itemId}", (int itemId, IMarketService service, SessionService session, PendingActionStore store, HttpRequest request) =>
+             {
+                 var qty = ProjectionHelper.GetMaxAffordableQuantity(session, store.Actions, itemId);
+
+                 return HandleQueued(request, service, session, store, itemId, ActionType.Buy, qty);
+             });
+
+        app.MapPost("/market/sell/{itemId}", HandleAction(ActionType.Sell, 1));
+
+        app.MapPost("/market/sell-all/{itemId}", (int itemId, IMarketService service, SessionService session, PendingActionStore store, HttpRequest request) =>
         {
-            service.QueueAction(session, PendingActions, new MarketActionRequest
-            {
-                ItemId = itemId,
-                ActionType = ActionType.Buy,
-                Quantity = 1
-            });
+            var qty = ProjectionHelper.GetMaxSellableQuantity(session, store.Actions, itemId);
 
-            return Results.Redirect("/market");
-        });
-
-        app.MapPost("/market/buy-max/{itemId}", (int itemId, IMarketService service, SessionService session) =>
-        {
-            service.QueueAction(session, PendingActions, new MarketActionRequest
-            {
-                ItemId = itemId,
-                ActionType = ActionType.Buy,
-                Quantity = ProjectionHelper.GetMaxAffordableQuantity(session, PendingActions, itemId)
-            });
-
-            return Results.Redirect("/market");
-        });
-
-        app.MapPost("/market/sell/{itemId}", (int itemId, IMarketService service, SessionService session) =>
-        {
-            service.QueueAction(session, PendingActions, new MarketActionRequest
-            {
-                ItemId = itemId,
-                ActionType = ActionType.Sell,
-                Quantity = 1
-            });
-
-            return Results.Redirect("/market");
-        });
-
-        app.MapPost("/market/sell-all/{itemId}", (int itemId, IMarketService service, SessionService session) =>
-        {
-            service.QueueAction(session, PendingActions, new MarketActionRequest
-            {
-                ItemId = itemId,
-                ActionType = ActionType.Sell,
-                Quantity = ProjectionHelper.GetMaxSellableQuantity(session, PendingActions, itemId)
-            });
-
-            return Results.Redirect("/market");
+            return HandleQueued(request, service, session, store, itemId, ActionType.Sell, qty);
         });
     }
-
-    private static IResult QueuePendingAction(SessionService session, int itemId, ActionType type, int quantity, HttpRequest request)
+    // 🔥 Generic handler (clean)
+    private static Func<int, IMarketService, SessionService, PendingActionStore, HttpRequest, IResult>
+        HandleAction(ActionType type, int quantity) =>
+        (itemId, service, session, store, request) =>
+            HandleQueued(request, service, session, store, itemId, type, quantity);
+    private static IResult HandleQueued(
+        HttpRequest request,
+        IMarketService service,
+        SessionService session,
+        PendingActionStore store,
+        int itemId,
+        ActionType type,
+        int quantity)
     {
-        // Only add action if quantity > 0
-        if (quantity <= 0) return RenderMarket(request, session);
+        if (quantity <= 0)
+            return RenderMarket(request, session, store);
 
-        PendingActions.Add(new PendingAction
+        service.QueueAction(session, store.Actions, new MarketActionRequest
         {
             ItemId = itemId,
             ActionType = type,
             Quantity = quantity
         });
 
-        return RenderMarket(request, session);
+        return RenderMarket(request, session, store);
     }
 
-    private static IResult RenderMarket(HttpRequest request, SessionService session)
+    private static IResult RenderMarket(HttpRequest request, SessionService session, PendingActionStore store)
     {
-        var html = MarketView.Render(session, PendingActions);
+        var html = MarketView.Render(session, store.Actions);
         return WebHelpers.Html(request, html);
     }
 }

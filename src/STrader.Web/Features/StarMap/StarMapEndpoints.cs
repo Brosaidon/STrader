@@ -2,15 +2,25 @@ namespace STrader.Web.Features.StarMap;
 
 using STrader.Application.Services;
 using STrader.Application.Interfaces;
+
 public static class StarMapEndpoints
 {
     public static void MapStarMap(this WebApplication app)
     {
-        app.MapPost("/travel", (IMarketService service, SessionService session) =>
+        app.MapPost("/travel", (
+            IMarketService service,
+            SessionService session,
+            PendingActionStore store,
+            HttpRequest request) =>
+        {
+            service.ExecuteTurn(session, store.Actions);
 
-    service.ExecuteTurn(session, PendingActions);
+            // 🔥 Clear after commit
+            store.Actions.Clear();
 
-        return Results.Redirect("/market");
+            var html = MarketView.Render(session, store.Actions);
+            return WebHelpers.Html(request, html);
+        });
 
         app.MapGet("/star-map", (HttpRequest request) =>
         {
@@ -18,19 +28,18 @@ public static class StarMapEndpoints
                 <section>
                     <h2>Star Map</h2> 
                     <ul>
-                    <li>Sectors</li>
-                    <li>Stations</li>
+                        <li>Sectors</li>
+                        <li>Stations</li>
                     </ul>
                 </section>
                 """;
-            //HTMX request - return partial HTML
+
             if (request.Headers.ContainsKey("HX-Request"))
                 return Results.Content(html, "text/html");
-            //Normal request - return full page
-            return Results.Content(
-            Layout.LayoutHtml.Page(html),
-            "text/html");
 
+            return Results.Content(
+                Layout.LayoutHtml.Page(html),
+                "text/html");
         });
     }
 }
