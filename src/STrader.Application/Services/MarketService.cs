@@ -1,6 +1,7 @@
 using STrader.Application.Interfaces;
 using STrader.Application.Models;
 using STrader.Domain.Entities;
+using STrader.Application.Validation;
 
 namespace STrader.Application.Services;
 
@@ -16,32 +17,43 @@ public class MarketService : IMarketService
     //READ ONLY
     public MarketStateDto GetMarket(SessionService session, List<PendingAction> pending)
     {
+
         return new MarketStateDto
         {
             Credits = ProjectionHelper.GetProjectedCredits(session, pending),
             CargoUsed = ProjectionHelper.GetProjectedCargoUsed(session, pending),
             CargoLeft = ProjectionHelper.GetProjectedCargoLeft(session, pending),
 
+
             Items = session.Market
             .Select(item => MapItem(session, item, pending))
             .ToList()
+
+
         };
     }
 
     // NO STATE MUTATION
-    public void QueueAction(SessionService session, List<PendingAction> pending, MarketActionRequest request)
+    public void QueueAction(SessionService session, List<PendingAction> actions, MarketActionRequest request)
     {
-        var action = new PendingAction
+        var item = session.Market.First(i => i.ItemId == request.ItemId);
+
+        int validQuantity = request.ActionType switch
+        {
+            ActionType.Buy => ActionValidator.ClampBuyQuantity(session, actions, item, request.Quantity),
+            ActionType.Sell => ActionValidator.ClampSellQuantity(session, actions, request.ItemId, request.Quantity),
+            _ => 0
+        };
+
+        if (validQuantity <= 0)
+            return;
+
+        actions.Add(new PendingAction
         {
             ItemId = request.ItemId,
             ActionType = request.ActionType,
-            Quantity = request.Quantity
-        };
-
-        if (!ActionValidator.CanExecute(session, pending, action))
-            return;
-
-        pending.Add(action);
+            Quantity = validQuantity
+        });
     }
 
     // The ONLY WRITE ENTRY POINT
@@ -56,19 +68,31 @@ public class MarketService : IMarketService
         }
         pending.Clear();
 
-        _repository.SaveSession(session); //<--- This, this is where we write to the database.
+        _repository.Save(session); //<--- This, this is where we write to the database.
     }
 
-    private static MarketItemDto MapItem(SessionService session, MarketItem item, List<PendingAction> pending)
+    private static MarketItemDto MapItem(
+        SessionService session,
+        MarketItem item,
+        List<PendingAction> pending)
     {
         var catalog = ItemCatalog.Items.First(i => i.Id == item.ItemId);
 
         var cargo = session.Cargo.FirstOrDefault(c => c.ItemId == item.ItemId);
         var inCargo = cargo?.Quantity ?? 0;
 
-        var pendingbuy = pending
-        .Where(a => a.ItemId == item.ItemId && a.ActionType == ActionType.Buy)
-        .Sum(a => a.Quantity);
+        // ✅ BOTH directions must exist
+        var pendingBuy = pending
+            .Where(a => a.ItemId == item.ItemId && a.ActionType == ActionType.Buy)
+            .Sum(a => a.Quantity);
+
+        var pendingSell = pending
+            .Where(a => a.ItemId == item.ItemId && a.ActionType == ActionType.Sell)
+            .Sum(a => a.Quantity);
+
+        // ✅ Projection math (same everywhere in system)
+        var projectedAvailable = item.Available - pendingBuy + pendingSell;
+        var projectedInCargo = inCargo + pendingBuy - pendingSell;
 
         return new MarketItemDto
         {
@@ -77,10 +101,12 @@ public class MarketService : IMarketService
             Icon = catalog.Icon,
             Price = item.Price,
 
-            Available = Math.Max(0, item.Available - pendingbuy + pendingSell), // Show reduced availability for pending buys
-            InCargo = Math.Max(0, inCargo + pendingBuy - pendingSell)
+            // 👉 UI should use these (projected state)
+            Available = Math.Max(0, projectedAvailable),
+            InCargo = Math.Max(0, projectedInCargo)
         };
     }
+
     private static void Apply(SessionService session, PendingAction action)
     {
         var item = session.GetMarketItem(action.ItemId);

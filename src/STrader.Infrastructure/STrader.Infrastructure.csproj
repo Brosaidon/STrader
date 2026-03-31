@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../STrader.Application/STrader.Application.csproj" />
     <ProjectReference Include="..\STrader.Domain\STrader.Domain.csproj" />
   </ItemGroup>
 

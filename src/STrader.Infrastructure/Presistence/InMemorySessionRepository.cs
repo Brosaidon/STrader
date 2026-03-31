@@ -1,5 +1,5 @@
-using STrader.Application.Interfaces;
 using STrader.Application.Services;
+using STrader.Application.Interfaces;
 
 namespace STrader.Infrastructure.Persistence;
 
