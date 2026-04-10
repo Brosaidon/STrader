@@ -9,36 +9,61 @@ public static class MarketEndpoints
 {
     public static void MapMarket(this WebApplication app)
     {
-        app.MapGet("/market", (SessionService session, PendingActionStore store, HttpRequest request) =>
+        //Always get market via service.
+        app.MapGet("/market", (
+            SessionService session,
+            PendingActionStore store,
+            IMarketService service,
+            HttpRequest request) =>
         {
             // Use projections for UI rendering
-            var html = MarketView.Render(session, store.Actions);
-            return WebHelpers.Html(request, html);
+            var model = service.GetMarket(session, store.Actions);
+            return WebHelpers.Html(request, MarketView.Render(model));
         });
 
-        app.MapPost("/market/buy/{itemId}", HandleAction(ActionType.Buy, 1));
+        //Buy 1
+        app.MapPost("/market/buy/{itemId}",
+        HandleAction(ActionType.Buy, 1));
 
-        app.MapPost("/market/buy-max/{itemId}", (int itemId, IMarketService service, SessionService session, PendingActionStore store, HttpRequest request) =>
+        //Buy max
+
+        app.MapPost("/market/buy-max/{itemId}", (
+            int itemId,
+            IMarketService service,
+            SessionService session,
+            PendingActionStore store,
+            HttpRequest request) =>
              {
                  var qty = ProjectionHelper.GetMaxAffordableQuantity(session, store.Actions, itemId);
 
                  return HandleQueued(request, service, session, store, itemId, ActionType.Buy, qty);
              });
 
-        app.MapPost("/market/sell/{itemId}", HandleAction(ActionType.Sell, 1));
+        //Sell 1
+        app.MapPost("/market/sell/{itemId}",
+        HandleAction(ActionType.Sell, 1));
 
-        app.MapPost("/market/sell-all/{itemId}", (int itemId, IMarketService service, SessionService session, PendingActionStore store, HttpRequest request) =>
+        //Sell max
+        app.MapPost("/market/sell-all/{itemId}", (
+            int itemId,
+            IMarketService service,
+            SessionService session,
+            PendingActionStore store,
+            HttpRequest request) =>
         {
             var qty = ProjectionHelper.GetMaxSellableQuantity(session, store.Actions, itemId);
 
             return HandleQueued(request, service, session, store, itemId, ActionType.Sell, qty);
         });
     }
-    // 🔥 Generic handler (clean)
+
+    // 🔥 Generic handler
     private static Func<int, IMarketService, SessionService, PendingActionStore, HttpRequest, IResult>
         HandleAction(ActionType type, int quantity) =>
         (itemId, service, session, store, request) =>
             HandleQueued(request, service, session, store, itemId, type, quantity);
+
+    //Queue and rerender via service.
     private static IResult HandleQueued(
         HttpRequest request,
         IMarketService service,
@@ -60,10 +85,15 @@ public static class MarketEndpoints
 
         return RenderMarket(request, session, store);
     }
-
-    private static IResult RenderMarket(HttpRequest request, SessionService session, PendingActionStore store)
+    // Rerender via service -> DTO -> View.
+    private static IResult RenderMarket(
+        HttpRequest request,
+        IMarketService service,
+        SessionService session,
+        PendingActionStore store)
     {
-        var html = MarketView.Render(session, store.Actions);
+        var model = service.GetMarket(session, store.Actions);
+        var html = MarketView.Render(model);
         return WebHelpers.Html(request, html);
     }
 }
