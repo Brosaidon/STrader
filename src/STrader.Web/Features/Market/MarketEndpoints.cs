@@ -34,7 +34,7 @@ public static class MarketEndpoints
             PendingActionStore store,
             HttpRequest request) =>
              {
-                 var qty = ProjectionHelper.GetMaxAffordableQuantity(session, store.Actions, itemId);
+                 var qty = service.GetMaxBuyQuantity(session, store.Actions, itemId);
 
                  return HandleQueued(request, service, session, store, itemId, ActionType.Buy, qty);
              });
@@ -51,7 +51,7 @@ public static class MarketEndpoints
             PendingActionStore store,
             HttpRequest request) =>
         {
-            var qty = ProjectionHelper.GetMaxSellableQuantity(session, store.Actions, itemId);
+            var qty = service.GetMaxSellQuantity(session, store.Actions, itemId);
 
             return HandleQueued(request, service, session, store, itemId, ActionType.Sell, qty);
         });
@@ -74,7 +74,7 @@ public static class MarketEndpoints
         int quantity)
     {
         if (quantity <= 0)
-            return RenderMarket(request, session, store);
+            return RenderMarket(request, service, session, store);
 
         service.QueueAction(session, store.Actions, new MarketActionRequest
         {
@@ -83,7 +83,7 @@ public static class MarketEndpoints
             Quantity = quantity
         });
 
-        return RenderMarket(request, session, store);
+        return RenderMarket(request, service, session, store);
     }
     // Rerender via service -> DTO -> View.
     private static IResult RenderMarket(

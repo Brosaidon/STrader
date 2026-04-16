@@ -10,4 +10,9 @@ public interface IMarketService
     void QueueAction(SessionService session, List<PendingAction> pending, MarketActionRequest request);
 
     void ExecuteTurn(SessionService session, List<PendingAction> pending);
+
+    int GetMaxBuyQuantity(SessionService session, List<PendingAction> pending, int itemId);
+
+    int GetMaxSellQuantity(SessionService session, List<PendingAction> pending, int itemId);
+
 }
