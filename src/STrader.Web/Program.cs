@@ -5,6 +5,7 @@ using STrader.Web.Layout;
 using STrader.Web.WebHelpers;
 using STrader.Application.Services;
 using STrader.Application.Interfaces;
+using STrader.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<SessionService>();

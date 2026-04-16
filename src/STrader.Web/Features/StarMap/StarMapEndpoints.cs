@@ -1,5 +1,6 @@
 namespace STrader.Web.Features.StarMap;
 
+using STrader.Web.WebHelpers;
 using STrader.Application.Services;
 using STrader.Application.Interfaces;
 
@@ -18,8 +19,9 @@ public static class StarMapEndpoints
             // 🔥 Clear after commit
             store.Actions.Clear();
 
-            var html = MarketView.Render(session, store.Actions);
-            return WebHelpers.Html(request, html);
+            // Here we might start some post travel events.
+
+            return Results.Redirect("/market");
         });
 
         app.MapGet("/star-map", (HttpRequest request) =>
