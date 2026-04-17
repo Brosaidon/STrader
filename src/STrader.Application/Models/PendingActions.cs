@@ -11,7 +11,13 @@ public enum ActionType
     Upgrade
 }
 
-public class PendingAction
+public class pendingMarketAction
+{
+    public int ItemId { get; init; }
+    public int Quantity { get; init; }
+}
+
+public class UserAction
 {
     public ActionType ActionType { get; init; }
 

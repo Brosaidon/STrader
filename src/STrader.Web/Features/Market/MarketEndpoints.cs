@@ -75,8 +75,8 @@ public static class MarketEndpoints
     private static IResult HandleQueued(
         int itemId,
         SessionService session,
-        [FromServices] IMarketService service,
-        [FromServices] PendingActionStore store,
+        IMarketService service,
+        PendingActionStore store,
         HttpRequest request,
         ActionType type,
         int quantity)
@@ -84,15 +84,11 @@ public static class MarketEndpoints
         if (quantity <= 0)
             return RenderMarket(session, service, store, request);
 
-        service.QueueAction(session, store.Actions, new MarketActionRequest
-        {
-            ItemId = itemId,
-            ActionType = type,
-            Quantity = quantity
-        });
+        store.Add(itemId, type, quantity);
 
         return RenderMarket(session, service, store, request);
     }
+
     // Rerender via service -> DTO -> View.
     private static IResult RenderMarket(
         SessionService session,

@@ -4,5 +4,6 @@ using STrader.Application.Models;
 
 public class PendingActionStore
 {
-    public List<PendingAction> Actions { get; } = new();
+    private readonly Dictionary<int, int> _net = new();
+    public List<UserAction> Actions { get; } = new();
 }

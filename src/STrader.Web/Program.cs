@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<SessionService>();
 builder.Services.AddSingleton<IMarketService, MarketService>();
 builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
+builder.Services.AddSingleton<PendingActionStore>();
 var app = builder.Build();
 
 var session = app.Services.GetRequiredService<SessionService>();
