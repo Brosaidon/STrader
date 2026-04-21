@@ -23,6 +23,16 @@ public class MarketItemDto
 
     public int ProjectedAvailable { get; set; }
     public int ProjectedInCargo { get; set; }
+
+    public int PendingNet { get; init; }
+
+
+    // ✅ NEW (important)
+    public int MaxBuy { get; init; }
+    public int MaxSell { get; init; }
+
+    public bool CanBuy => MaxBuy > 0;
+    public bool CanSell => MaxSell > 0;
 }
 
 public class MarketActionRequest

@@ -15,9 +15,10 @@ public class MarketService : IMarketService
     }
 
     //READ ONLY
-    public MarketStateDto GetMarket(SessionService session, List<PendingAction> pending)
+    public MarketStateDto GetMarket(
+        SessionService session,
+        IReadOnlyDictionary<int, int> pending)
     {
-
         return new MarketStateDto
         {
             Credits = GetProjectedCredits(session, pending),
@@ -32,77 +33,37 @@ public class MarketService : IMarketService
         };
     }
 
-    // NO STATE MUTATION
-    public void QueueAction(SessionService session, List<PendingAction> actions, MarketActionRequest request)
-    {
-        var item = session.Market.First(i => i.ItemId == request.ItemId);
-
-        int validQuantity = request.ActionType switch
-        {
-            ActionType.Buy => ActionValidator.ClampBuyQuantity(session, actions, item, request.Quantity),
-            ActionType.Sell => ActionValidator.ClampSellQuantity(session, actions, request.ItemId, request.Quantity),
-            _ => 0
-        };
-
-        if (validQuantity <= 0)
-            return;
-
-        actions.Add(new PendingAction
-        {
-            ItemId = request.ItemId,
-            ActionType = request.ActionType,
-            Quantity = validQuantity
-        });
-    }
-
-    // The ONLY WRITE ENTRY POINT
-    public void ExecuteTurn(SessionService session, List<PendingAction> pending)
-    {
-        foreach (var action in pending)
-        {
-            if (!ActionValidator.CanExecute(session, pending, action))
-                continue;
-
-            Apply(session, action);
-        }
-        pending.Clear();
-
-        _repository.Save(session); //<--- This, this is where we write to the database.
-    }
-
-    private static MarketItemDto MapItem(
+    private MarketItemDto MapItem(
         SessionService session,
         MarketItem item,
-        List<PendingAction> pending)
+        IReadOnlyDictionary<int, int> pending)
     {
-        var catalog = ItemCatalog.Items.First(i => i.Id == item.ItemId);
+        var def = session.GetDefinition(item.ItemId);
+        var net = pending.GetValueOrDefault(item.ItemId);
 
-        var cargo = session.Cargo.FirstOrDefault(c => c.ItemId == item.ItemId);
-        var inCargo = cargo?.Quantity ?? 0;
+        var cargo = session.Cargo
+        .FirstOrDefault(c => c.ItemId == item.ItemId)?.Quantity ?? 0;
 
-        // ✅ BOTH directions must exist
-        var pendingBuy = pending
-            .Where(a => a.ItemId == item.ItemId && a.ActionType == ActionType.Buy)
-            .Sum(a => a.Quantity);
+        var projectedCargo = cargo + net;
+        var projectedAvailable = item.Available - net;
 
-        var pendingSell = pending
-            .Where(a => a.ItemId == item.ItemId && a.ActionType == ActionType.Sell)
-            .Sum(a => a.Quantity);
-
-        // ✅ Projection math (same everywhere in system)
-        var projectedAvailable = item.Available - pendingBuy + pendingSell;
-        var projectedInCargo = inCargo + pendingBuy - pendingSell;
+        var maxBuy = GetMaxBuyQuantity(session, pending, item.ItemId);
+        var maxSell = GetMaxSellQuantity(session, pending, item.ItemId);
 
         return new MarketItemDto
         {
             ItemId = item.ItemId,
-            Name = catalog.Name,
-            Icon = catalog.Icon,
+            Name = def.Name,
+            Icon = def.Icon,
             Price = item.Price,
 
             // 👉 UI should use these (projected state)
             Available = Math.Max(0, projectedAvailable),
-            InCargo = Math.Max(0, projectedInCargo)
+            InCargo = Math.Max(0, projectedCargo),
+            PendingNet = net,
+
+            MaxBuy = maxBuy,
+            MaxSell = maxSell,
         };
     }
 
@@ -143,46 +104,54 @@ public class MarketService : IMarketService
         }
     }
 
-    private static int GetProjectedCredits(SessionService session, List<PendingAction> pending)
+    private static int GetProjectedCredits(
+        SessionService session,
+        IReadOnlyDictionary<int, int> pending)
     {
-        var marketById = session.Market.ToDictionary(m => m.ItemId);
+        var credits = session.Credits;
 
-        return session.Credits - pending.Sum(a =>
+        foreach (var (itemId, net) in pending)
         {
-            if (!marketById.TryGetValue(a.ItemId, out var item))
-                return 0;
-            return a.ActionType switch
-            {
-                ActionType.Buy => item.Price * a.Quantity,
-                ActionType.Sell => -item.Price * a.Quantity,
-                _ => 0
-            };
-        });
+            var price = session.Market[itemId].Price;
+            credits -= net * price;
+        }
+        return credits;
     }
 
-    private static int GetProjectedCargoUsed(SessionService session, List<PendingAction> pending)
+    private static int GetProjectedCargoUsed(
+        SessionService session,
+        IReadOnlyDictionary<int, int> pending)
     {
-        var baseCargo = session.Cargo.Sum(c => c.Quantity);
-
-        var pendingDelta = pending.Sum(a =>
+        var total = 0;
+        foreach (var cargo in session.Cargo)
         {
-            return a.ActionType switch
-            {
-                ActionType.Buy => a.Quantity,
-                ActionType.Sell => -a.Quantity,
-                _ => 0
-            };
-        });
+            var net = pending.GetValueOrDefault(cargo.ItemId);
+            total += cargo.Quantity + net;
+        }
 
-        return Math.Max(0, baseCargo + pendingDelta);
+        //this is for items that are not currently in cargo but are being bought this turn.
+        foreach (var (itemId, net) in pending)
+        {
+            var exists = session.Cargo.Any(c => c.ItemId == itemId);
+            if (!exists && net > 0)
+            {
+                total += net;
+            }
+        }
+        return Math.Max(0, total);
     }
 
-    private static int GetProjectedCargoLeft(SessionService session, List<PendingAction> pending)
+    private static int GetProjectedCargoLeft(
+        SessionService session,
+        IReadOnlyDictionary<int, int> pending)
     {
         return Math.Max(0, session.CargoSpace - GetProjectedCargoUsed(session, pending));
     }
 
-    public int GetMaxBuyQuantity(SessionService session, List<PendingAction> pending, int itemId)
+    public int GetMaxBuyQuantity(
+        SessionService session,
+        IReadOnlyDictionary<int, int> pending,
+        int itemId)
     {
         var item = session.GetMarketItem(itemId);
         if (item == null || item.Price <= 0) return 0;
@@ -190,26 +159,82 @@ public class MarketService : IMarketService
         var credits = GetProjectedCredits(session, pending);
         var cargoLeft = GetProjectedCargoLeft(session, pending);
 
-        var affordableByCredits = credits / item.Price;
-        var affordableByCargo = cargoLeft;
+        var net = pending.GetValueOrDefault(itemId);
 
-        return Math.Max(0, Math.Min(item.Available, Math.Min(affordableByCredits, affordableByCargo)));
+        var available = item.Available - net;
+
+        var byCredits = credits / item.Price;
+        var byCargo = cargoLeft;
+
+        return Math.Max(0,
+            Math.Min(available,
+            Math.Min(byCredits, byCargo)));
     }
 
-    public int GetMaxSellQuantity(SessionService session, List<PendingAction> pending, int itemId)
+    public int GetMaxSellQuantity(
+        SessionService session,
+        IReadOnlyDictionary<int, int> pending,
+        int itemId)
     {
-        var cargo = session.GetCargoItem(itemId);
-        var inCargo = cargo?.Quantity ?? 0;
+        var cargo = session.GetCargoItem(itemId)?.Quantity ?? 0;
+        var net = pending.GetValueOrDefault(itemId);
 
-        var pendingBuy = pending
-            .Where(a => a.ItemId == itemId && a.ActionType == ActionType.Buy)
-            .Sum(a => a.Quantity);
+        var effectiveCargo = cargo + net;
 
-        var pendingSell = pending
-            .Where(a => a.ItemId == itemId && a.ActionType == ActionType.Sell)
-            .Sum(a => a.Quantity);
+        return Math.Max(0, effectiveCargo);
+    }
 
-        return Math.Max(0, inCargo + pendingBuy - pendingSell);
+    public void ApplyNet(
+    SessionService session,
+    IReadOnlyDictionary<int, int> pending)
+    {
+        foreach (var (itemId, net) in pending)
+        {
+            if (net == 0) continue;
+
+            ApplyNetInternal(session, itemId, net);
+        }
+    }
+
+    private static void ApplyNetInternal(
+        SessionService session,
+        int itemId,
+        int net)
+    {
+        var item = session.GetMarketItem(itemId);
+        if (item == null) return;
+
+        if (net > 0)
+        {
+            var cargo = session.GetCargoItem(itemId);
+
+            if (cargo == null)
+            {
+                session.Cargo.Add(new CargoItem
+                {
+                    ItemId = itemId,
+                    Quantity = net
+                });
+            }
+            else
+            {
+                cargo.Quantity += net;
+            }
+
+            item.Available -= net;
+            session.Credits -= item.Price * net;
+        }
+        else
+        {
+            var sellQty = -net;
+
+            var cargo = session.GetCargoItem(itemId);
+            if (cargo == null) return;
+
+            cargo.Quantity -= sellQty;
+            item.Available += sellQty;
+            session.Credits += item.Price * sellQty;
+        }
     }
 }
 

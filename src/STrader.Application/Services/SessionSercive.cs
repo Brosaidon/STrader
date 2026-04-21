@@ -23,7 +23,7 @@ public class SessionService
     public int Credits { get; set; } = 1000; //starting credits
     public int CargoSpace { get; set; } = 25; //starting cargo space
 
-    //Initialize market with scommodities from the catalog.
+    //Initialize market with commodities from the catalog.
 
     public void InitializeMarket()
     {
@@ -46,4 +46,11 @@ public class SessionService
     //Market
     public MarketItem? GetMarketItem(int itemId) =>
         Market.FirstOrDefault(m => m.ItemId == itemId);
+
+    public List<ItemDefinition> Catalog { get; set; } = new();
+
+    public ItemDefinition GetDefinition(int itemId)
+    {
+        return Catalog.First(x => x.ItemId == itemId);
+    }
 }

@@ -5,14 +5,12 @@ namespace STrader.Application.Interfaces;
 
 public interface IMarketService
 {
-    MarketStateDto GetMarket(SessionService session, List<PendingAction> pending);
+    MarketStateDto GetMarket(SessionService session, IReadOnlyDictionary<int, int> pending);
 
-    void QueueAction(SessionService session, List<PendingAction> pending, MarketActionRequest request);
+    void ApplyNet(SessionService session, IReadOnlyDictionary<int, int> pending);
 
-    void ExecuteTurn(SessionService session, List<PendingAction> pending);
+    int GetMaxBuyQuantity(SessionService session, IReadOnlyDictionary<int, int> pending, int itemId);
 
-    int GetMaxBuyQuantity(SessionService session, List<PendingAction> pending, int itemId);
-
-    int GetMaxSellQuantity(SessionService session, List<PendingAction> pending, int itemId);
+    int GetMaxSellQuantity(SessionService session, IReadOnlyDictionary<int, int> pending, int itemId);
 
 }
