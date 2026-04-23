@@ -11,11 +11,16 @@ StarTrader is a web app where you take the roll of a space traveling trader. You
 StarTrader is a full stack demo application that aims to show different layers of software concept in an interesting and interactive way. My goal is to introduce different softwareconcepts in a way that is hopefully easy to read and understand. Whithout to much complication and "bloated code". This project aims for simplicity.
 (_) - I often ask my self, do i need really this? (_)
 
+### Installation
+
+Clone repository from git hub.
+Start a console and cd in to this project STrader.Web folder. run "npm run" in your terminal. that will start the Application.
+
 - HTMX
 
 * picoCSS
 
-### Architecural Structure
+#### Architecural Structure
 
 - Domain:
 
