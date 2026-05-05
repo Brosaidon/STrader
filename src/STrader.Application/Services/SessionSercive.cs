@@ -47,10 +47,6 @@ public class SessionService
     public MarketItem? GetMarketItem(int itemId) =>
         Market.FirstOrDefault(m => m.ItemId == itemId);
 
-    public List<ItemDefinition> Catalog { get; set; } = new();
-
-    public ItemDefinition GetDefinition(int itemId)
-    {
-        return Catalog.First(x => x.ItemId == itemId);
-    }
+    public Item GetDefinition(int itemId) =>
+    ItemCatalog.ById[itemId];
 }

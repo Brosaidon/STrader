@@ -1,7 +1,5 @@
 using STrader.Application.Interfaces;
 using STrader.Application.Models;
-using STrader.Domain.Entities;
-using STrader.Application.Validation;
 
 namespace STrader.Application.Services;
 
@@ -126,7 +124,7 @@ public class MarketService : IMarketService
         var credits = GetProjectedCredits(session, pending);
         var cargoLeft = GetProjectedCargoLeft(session, pending);
 
-        var net = pending.GetValueOrDefault(itemId);
+        var net = pending?.GetValueOrDefault(itemId) ?? 0;
 
         var available = item.Available - net;
 

@@ -2,5 +2,5 @@ using STrader.Application.Services;
 
 public interface ITurnService
 {
-    void ExecuteTurn(SessionService session, PendingActionStore store);
+    void ExecuteTurn(SessionService session, NetTradeStore store);
 }

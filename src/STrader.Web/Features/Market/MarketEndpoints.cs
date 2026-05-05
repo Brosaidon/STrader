@@ -13,7 +13,7 @@ public static class MarketEndpoints
         //Always get market via service.
         app.MapGet("/market", (
             SessionService session,
-            [FromServices] PendingActionStore store,
+            [FromServices] NetTradeStore store,
             [FromServices] IMarketService service,
             HttpRequest request) =>
         {
@@ -26,7 +26,7 @@ public static class MarketEndpoints
             int itemId,
             SessionService session,
             [FromServices] IMarketService service,
-            [FromServices] PendingActionStore store,
+            [FromServices] NetTradeStore store,
             HttpRequest request) =>
         {
             return HandleQueued(itemId, session, service, store, request, ActionType.Buy, 1);
@@ -38,7 +38,7 @@ public static class MarketEndpoints
             int itemId,
             SessionService session,
             [FromServices] IMarketService service,
-            [FromServices] PendingActionStore store,
+            [FromServices] NetTradeStore store,
             HttpRequest request) =>
              {
                  var qty = service.GetMaxBuyQuantity(session, store.Net, itemId);
@@ -51,7 +51,7 @@ public static class MarketEndpoints
             int itemId,
             SessionService session,
             [FromServices] IMarketService service,
-            [FromServices] PendingActionStore store,
+            [FromServices] NetTradeStore store,
             HttpRequest request) =>
         {
             return HandleQueued(itemId, session, service, store, request, ActionType.Sell, 1);
@@ -62,7 +62,7 @@ public static class MarketEndpoints
             int itemId,
             SessionService session,
             [FromServices] IMarketService service,
-            [FromServices] PendingActionStore store,
+            [FromServices] NetTradeStore store,
             HttpRequest request) =>
         {
             var qty = service.GetMaxSellQuantity(session, store.Net, itemId);
@@ -76,7 +76,7 @@ public static class MarketEndpoints
         int itemId,
         SessionService session,
         IMarketService service,
-        PendingActionStore store,
+        NetTradeStore store,
         HttpRequest request,
         ActionType type,
         int quantity)
@@ -93,7 +93,7 @@ public static class MarketEndpoints
     private static IResult RenderMarket(
         SessionService session,
         IMarketService service,
-        PendingActionStore store,
+        NetTradeStore store,
         HttpRequest request)
     {
         var model = service.GetMarket(session, store.Net);

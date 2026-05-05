@@ -15,9 +15,9 @@ public class TurnService : ITurnService
         _repository = repository;
     }
 
-    public void ExecuteTurn(SessionService session, PendingActionStore store)
+    public void ExecuteTurn(SessionService session, NetTradeStore store)
     {
-        var tradeDeltas = store.Net;
+        var tradeDeltas = store.Snapshot();
 
         // 1. Commit all staged trades (materialize optimistic actions)
         _market.ApplyNet(session, tradeDeltas);

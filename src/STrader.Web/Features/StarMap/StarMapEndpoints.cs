@@ -1,23 +1,18 @@
 namespace STrader.Web.Features.StarMap;
 
-using STrader.Web.WebHelpers;
 using STrader.Application.Services;
-using STrader.Application.Interfaces;
 
 public static class StarMapEndpoints
 {
     public static void MapStarMap(this WebApplication app)
     {
         app.MapPost("/travel", (
-            IMarketService service,
+            ITurnService turnService,
             SessionService session,
-            PendingActionStore store,
-            HttpRequest request) =>
+            NetTradeStore store
+            ) =>
         {
-            service.ExecuteTurn(session, store.Actions);
-
-            // 🔥 Clear after commit
-            store.Actions.Clear();
+            turnService.ExecuteTurn(session, store);
 
             // Here we might start some post travel events.
 
