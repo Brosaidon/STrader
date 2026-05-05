@@ -67,43 +67,6 @@ public class MarketService : IMarketService
         };
     }
 
-    private static void Apply(SessionService session, PendingAction action)
-    {
-        var item = session.GetMarketItem(action.ItemId);
-        if (item == null) return;
-
-        switch (action.ActionType)
-        {
-            case ActionType.Buy:
-                var cargo = session.GetCargoItem(action.ItemId);
-                if (cargo == null)
-                {
-                    session.Cargo.Add(new CargoItem
-                    {
-                        ItemId = action.ItemId,
-                        Quantity = action.Quantity
-                    });
-                }
-                else
-                {
-                    cargo.Quantity += action.Quantity;
-                }
-
-                item.Available -= action.Quantity;
-                session.Credits -= item.Price * action.Quantity;
-                break;
-
-            case ActionType.Sell:
-                var cargoItem = session.GetCargoItem(action.ItemId);
-                if (cargoItem == null) return;
-
-                cargoItem.Quantity -= action.Quantity;
-                item.Available += action.Quantity;
-                session.Credits += item.Price * action.Quantity;
-                break;
-        }
-    }
-
     private static int GetProjectedCredits(
         SessionService session,
         IReadOnlyDictionary<int, int> pending)
@@ -112,7 +75,11 @@ public class MarketService : IMarketService
 
         foreach (var (itemId, net) in pending)
         {
-            var price = session.Market[itemId].Price;
+            var item = session.GetMarketItem(itemId);
+
+            if (item == null) continue;
+
+            var price = item.Price;
             credits -= net * price;
         }
         return credits;

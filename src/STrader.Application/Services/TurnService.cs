@@ -17,24 +17,22 @@ public class TurnService : ITurnService
 
     public void ExecuteTurn(SessionService session, PendingActionStore store)
     {
-        var pending = store.();
+        var tradeDeltas = store.Net;
 
-        // 1. Apply market changes
-        _market.ApplyNet(session, pending);
+        // 1. Commit all staged trades (materialize optimistic actions)
+        _market.ApplyNet(session, tradeDeltas);
 
-        // 2. Future: crew effects
+        // 2. Resolve turn-based systems (future extensions)
         // _crew.Apply(session);
-
-        // 3. Future: random events
         // _events.Resolve(session);
 
-        // 4. Future: market recalibration
+        // 3. Recalculate market for new location (future)
         // _market.UpdatePrices(session);
 
-        // 5. Persist state
+        // 4. Persist the updated session
         _repository.Save(session);
 
-        // 6. Clear pending actions
+        // 5. Clear staged actions for next turn
         store.Clear();
     }
 }

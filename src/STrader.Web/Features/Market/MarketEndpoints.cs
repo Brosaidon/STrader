@@ -18,7 +18,7 @@ public static class MarketEndpoints
             HttpRequest request) =>
         {
             // Use projections for UI rendering
-            var model = service.GetMarket(session, store.Actions);
+            var model = service.GetMarket(session, store.Net);
             return WebHelpers.Html(request, MarketView.Render(model));
         });
 
@@ -41,7 +41,7 @@ public static class MarketEndpoints
             [FromServices] PendingActionStore store,
             HttpRequest request) =>
              {
-                 var qty = service.GetMaxBuyQuantity(session, store.Actions, itemId);
+                 var qty = service.GetMaxBuyQuantity(session, store.Net, itemId);
 
                  return HandleQueued(itemId, session, service, store, request, ActionType.Buy, qty);
              });
@@ -65,7 +65,7 @@ public static class MarketEndpoints
             [FromServices] PendingActionStore store,
             HttpRequest request) =>
         {
-            var qty = service.GetMaxSellQuantity(session, store.Actions, itemId);
+            var qty = service.GetMaxSellQuantity(session, store.Net, itemId);
 
             return HandleQueued(itemId, session, service, store, request, ActionType.Sell, qty);
         });
@@ -96,7 +96,7 @@ public static class MarketEndpoints
         PendingActionStore store,
         HttpRequest request)
     {
-        var model = service.GetMarket(session, store.Actions);
+        var model = service.GetMarket(session, store.Net);
         var html = MarketView.Render(model);
         return WebHelpers.Html(request, html);
     }
