@@ -1,7 +1,5 @@
 namespace STrader.Application.Services;
 
-using STrader.Application.Models;
-
 // Stores net trade deltas per item.
 // Used to project market state optimistically before committing on travel.
 public class NetTradeStore
@@ -13,19 +11,16 @@ public class NetTradeStore
     public Dictionary<int, int> Snapshot()
     => _net.ToDictionary(x => x.Key, x => x.Value);
 
-    public void Add(int itemId, ActionType type, int quantity)
+    public void Add(int itemId, int delta)
     {
-        var delta = type == ActionType.Buy ? quantity : -quantity;
+        _net[itemId] = _net.GetValueOrDefault(itemId) + delta;
 
-        if (_net.ContainsKey(itemId))
-            _net[itemId] += delta;
-        else
-            _net[itemId] = delta;
-
-        // 🔥 Clean zero entries
         if (_net[itemId] == 0)
+        {
             _net.Remove(itemId);
+        }
     }
+
     public void Clear()
     {
         _net.Clear();

@@ -1,5 +1,3 @@
-using STrader.Application.Services;
-using STrader.Domain.Entities;
 using STrader.Application.Models;
 
 namespace STrader.Web.Features.Market

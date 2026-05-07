@@ -1,7 +1,6 @@
 namespace STrader.Web.Features.Market;
 
 using STrader.Application.Services;
-using STrader.Application.Models;
 using STrader.Web.WebHelpers;
 using STrader.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +28,7 @@ public static class MarketEndpoints
             [FromServices] NetTradeStore store,
             HttpRequest request) =>
         {
-            return HandleQueued(itemId, session, service, store, request, ActionType.Buy, 1);
+            return HandleNetTrade(itemId, session, service, store, request, 1);
         });
 
         //Buy max
@@ -43,7 +42,7 @@ public static class MarketEndpoints
              {
                  var qty = service.GetMaxBuyQuantity(session, store.Net, itemId);
 
-                 return HandleQueued(itemId, session, service, store, request, ActionType.Buy, qty);
+                 return HandleNetTrade(itemId, session, service, store, request, qty);
              });
 
         //Sell 1
@@ -54,7 +53,7 @@ public static class MarketEndpoints
             [FromServices] NetTradeStore store,
             HttpRequest request) =>
         {
-            return HandleQueued(itemId, session, service, store, request, ActionType.Sell, 1);
+            return HandleNetTrade(itemId, session, service, store, request, -1);
         });
 
         //Sell max
@@ -67,24 +66,23 @@ public static class MarketEndpoints
         {
             var qty = service.GetMaxSellQuantity(session, store.Net, itemId);
 
-            return HandleQueued(itemId, session, service, store, request, ActionType.Sell, qty);
+            return HandleNetTrade(itemId, session, service, store, request, qty);
         });
     }
 
     //Queue and rerender via service.
-    private static IResult HandleQueued(
+    private static IResult HandleNetTrade(
         int itemId,
         SessionService session,
         IMarketService service,
         NetTradeStore store,
         HttpRequest request,
-        ActionType type,
         int quantity)
     {
         if (quantity <= 0)
             return RenderMarket(session, service, store, request);
 
-        store.Add(itemId, type, quantity);
+        store.Add(itemId, quantity);
 
         return RenderMarket(session, service, store, request);
     }

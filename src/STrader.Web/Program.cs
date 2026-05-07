@@ -2,7 +2,6 @@ using STrader.Web.Features.Market;
 using STrader.Web.Features.StarMap;
 using STrader.Web.Features.Station;
 using STrader.Web.Layout;
-using STrader.Web.WebHelpers;
 using STrader.Application.Services;
 using STrader.Application.Interfaces;
 using STrader.Infrastructure.Persistence;
